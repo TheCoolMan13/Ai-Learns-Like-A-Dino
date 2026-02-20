@@ -35,11 +35,17 @@ Character_Height = 500
 def Daw_Character(character_x):
     Character_Color = (255 , 0 , 0)
     pygame.draw.rect(window , Character_Color , (character_x, Character_Height , 36 , 70) ) 
+    
+
+Should_Spawn_Tube = pygame.USEREVENT + 1
+pygame.time.set_timer(Should_Spawn_Tube , 1500) # ms
 
 
 Tube_Width = 0
 Tube_Height = 0
-Tube_Speed = 5 #px/s
+Tube_Speed = 3 #px/s
+Tubes = []
+
 
 def Draw_Tube(tube_y ):
     Tube_Color = (0 , 0 , 0)
@@ -57,6 +63,10 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
+        if event.type == Should_Spawn_Tube:
+            random_x = random.randint(0 , (GAME_WIDTH // 36) - 1) * 36
+            new_tube =  pygame.Rect(random_x , -50 , 36 , 50)
+            Tubes.append(new_tube)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_a:
                 if(Character_Width > 0):
@@ -65,24 +75,32 @@ while True:
                 if(Character_Width < GAME_WIDTH - 36):
                     Character_Width += 36
     
-    Tube_Height += Tube_Speed
+    
+    for tube in Tubes[:]:
+        tube.y += Tube_Speed
     
     # Checking for colision
+    player_rect = pygame.Rect(Character_Width, Character_Height, 36, 70)
+    for tube in Tubes[:]:
+        # 1. Move the tube down
+        tube.y += Tube_Speed
+        
+        # 2. Check for COLLISION (Collection)
+        if player_rect.colliderect(tube):
+            Score += 1
+            Tubes.remove(tube)
+            print("COLLECTED!")
+            continue # Move to the next tube in the list
 
-    if Tube_Height <= 534:
-        Draw_Tube(Tube_Height)
-    else:
-       # pygame.quit()
-       # exit()
-        if(Tube_Width == Character_Width):
-           Score +=1
-           Tube_Height = -50
-           Tube_Width = random.choice([0, 36, 72, 108 , 144 , 180 , 216 , 252 , 288, 324])
-           print("COLISION")
-        else:
-           pygame.quit()
-           exit()
-          
+        # 3. Check for MISS (Game Over)
+        # If the bottom of the tube passes the line
+        if tube.y + tube.height > 534:
+            print("MISSED! GAME OVER")
+            pygame.quit()
+            exit()
+
+        # 4. Draw the tube
+        pygame.draw.rect(window, (0, 0, 0), tube)
     
     
     Score_text = f"Score : {Score}"
